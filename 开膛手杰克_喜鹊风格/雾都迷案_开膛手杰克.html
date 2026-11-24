@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雾都迷案｜谁制造了「开膛手杰克」</title>
+<style>
+  :root{
+    --black:#0b0b0b;
+    --white:#f4f0e8;
+    --red:#cf142b;
+    --red-dark:#8e0d1c;
+    --sans:"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif;
+    --serif:Georgia,"Times New Roman","Songti SC","SimSun",serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;background:var(--black);overflow:hidden;color:var(--white);font-family:var(--sans)}
+  .stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000}
+  .deck{position:relative;width:1280px;height:720px;transform-origin:center center;overflow:hidden;
+    background:var(--black);perspective:1600px}
+  .slide{position:absolute;inset:0;width:1280px;height:720px;background:var(--black);
+    opacity:0;visibility:hidden;transform:scale(1.06);filter:blur(8px);
+    transition:opacity .72s ease,transform .84s cubic-bezier(.22,.75,.25,1),filter .72s ease;
+    overflow:hidden;backface-visibility:hidden}
+  .slide.active{opacity:1;visibility:visible;transform:none;filter:none;z-index:3}
+  /* 八种转场：页面自身的进出姿态 */
+  .slide.fx-exit-slash{visibility:visible;opacity:0;transform:scale(.94) translateX(-95px) skewX(-8deg);filter:blur(12px);z-index:2}
+  .slide.fx-enter-slash{visibility:visible;opacity:1;transform:scale(1.07) translateX(95px) skewX(8deg);filter:blur(10px);z-index:3}
+  .slide.fx-exit-blind{visibility:visible;opacity:0;transform:translateY(-90px) scale(.96);filter:blur(10px);z-index:2}
+  .slide.fx-enter-blind{visibility:visible;opacity:1;transform:translateY(90px) scale(1.05);filter:blur(8px);z-index:3}
+  .slide.fx-exit-ink{visibility:visible;opacity:0;transform:scale(.72);filter:blur(26px);z-index:2}
+  .slide.fx-enter-ink{visibility:visible;opacity:1;transform:scale(1.22);filter:blur(16px);z-index:3}
+  .slide.fx-exit-glitch{visibility:visible;opacity:0;transform:translateX(-22px) skewX(12deg);filter:blur(4px);z-index:2}
+  .slide.fx-enter-glitch{visibility:visible;opacity:1;transform:translateX(22px) skewX(-12deg);filter:blur(3px);z-index:3}
+  .slide.fx-exit-page{visibility:visible;opacity:0;transform:rotateY(-78deg) scale(.9);transform-origin:right center;filter:blur(6px);z-index:2}
+  .slide.fx-enter-page{visibility:visible;opacity:1;transform:rotateY(78deg) scale(1.1);transform-origin:left center;filter:blur(6px);z-index:3}
+  .slide.fx-exit-fog{visibility:visible;opacity:0;transform:scale(1.16) translateY(26px);filter:blur(32px);z-index:2}
+  .slide.fx-enter-fog{visibility:visible;opacity:1;transform:scale(.9) translateY(-26px);filter:blur(20px);z-index:3}
+  .slide.fx-exit-shutter{visibility:visible;opacity:0;transform:scale(1.34);filter:blur(10px);z-index:2}
+  .slide.fx-enter-shutter{visibility:visible;opacity:1;transform:scale(.78);filter:blur(6px);z-index:3}
+  .slide.fx-exit-drop{visibility:visible;opacity:0;transform:translateY(95px) scale(.95);filter:blur(10px);z-index:2}
+  .slide.fx-enter-drop{visibility:visible;opacity:1;transform:translateY(-95px) scale(1.05);filter:blur(8px);z-index:3}
+  /* 八种转场：遮盖层 */
+  .fx{position:absolute;inset:0;z-index:9;pointer-events:none}
+  .fx i{position:absolute;inset:0;display:block;opacity:0}
+  .fx i.run{animation-duration:.82s;animation-timing-function:cubic-bezier(.7,0,.3,1);animation-fill-mode:both}
+  .fx-slash{background:linear-gradient(-22deg,transparent 45%,var(--red) 47%,var(--red) 53%,var(--white) 54%,transparent 56%)}
+  .fx-slash.run{animation-name:fxSlash}
+  @keyframes fxSlash{0%{opacity:1;transform:translateX(-160%)}45%{opacity:1;transform:translateX(0)}55%{opacity:1;transform:translateX(0)}100%{opacity:1;transform:translateX(160%)}}
+  .fx-blind{background:repeating-linear-gradient(90deg,#000 0 5.6%,var(--red) 5.6% 6%,transparent 6% 11%)}
+  .fx-blind.run{animation-name:fxBlind}
+  @keyframes fxBlind{0%{opacity:1;clip-path:inset(0 0 0 0)}45%{opacity:1;clip-path:inset(0 0 0 0)}100%{opacity:1;clip-path:inset(0 100% 0 0)}}
+  .fx-ink{background:radial-gradient(circle at 50% 50%,var(--red) 0 26%,var(--red-dark) 50%,#000 78%)}
+  .fx-ink.run{animation-name:fxInk}
+  @keyframes fxInk{0%{opacity:1;clip-path:circle(0% at 50% 50%)}45%{opacity:1;clip-path:circle(85% at 50% 50%)}55%{opacity:1;clip-path:circle(85% at 50% 50%)}100%{opacity:1;clip-path:circle(0% at 50% 50%)}}
+  .fx-glitch.run{animation-name:fxGlitch;animation-timing-function:steps(1,end)}
+  @keyframes fxGlitch{0%,11%{opacity:1;background:var(--white);transform:translateX(-8px)}12%,23%{opacity:1;background:var(--red);transform:translateX(10px)}24%,35%{opacity:1;background:#000;transform:translateX(-5px)}36%,47%{opacity:1;background:var(--white);transform:translateX(7px)}48%,100%{opacity:0;transform:none}}
+  .fx-page{background:linear-gradient(90deg,var(--red),#000 12%,#000);transform-origin:left center}
+  .fx-page.run{animation-name:fxPage}
+  @keyframes fxPage{0%{opacity:1;transform:rotateY(-90deg)}50%{opacity:1;transform:rotateY(0)}100%{opacity:0;transform:rotateY(90deg)}}
+  .fx-fog{background:radial-gradient(ellipse at 50% 90%,rgba(244,240,232,.96),rgba(244,240,232,.45) 42%,transparent 72%)}
+  .fx-fog.run{animation-name:fxFog}
+  @keyframes fxFog{0%{opacity:0;transform:translateY(40px)}45%{opacity:1;transform:translateY(0)}55%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}
+  .fx-shutter{background:#000;box-shadow:inset 0 -4px 0 var(--red)}
+  .fx-shutter.run{animation-name:fxShutter}
+  @keyframes fxShutter{0%{opacity:1;clip-path:inset(0 0 100% 0)}45%{opacity:1;clip-path:inset(0 0 0 0)}55%{opacity:1;clip-path:inset(0 0 0 0)}100%{opacity:1;clip-path:inset(100% 0 0 0)}}
+  .fx-drop{background:linear-gradient(180deg,var(--red),var(--red-dark) 60%,#000)}
+  .fx-drop.run{animation-name:fxDrop}
+  @keyframes fxDrop{0%{opacity:1;clip-path:inset(0 0 100% 0)}45%{opacity:1;clip-path:inset(0 0 0 0)}55%{opacity:1;clip-path:inset(0 0 0 0)}100%{opacity:1;clip-path:inset(0 0 100% 0)}}
+  .grain{position:absolute;inset:0;pointer-events:none;opacity:.07;z-index:8;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E")}
+  .fog{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 78% 72%,rgba(244,240,232,.10),transparent 55%),
+               radial-gradient(ellipse at 12% 8%,rgba(244,240,232,.06),transparent 48%)}
+  .pad{position:absolute;inset:54px 70px;z-index:4}
+  .top{position:absolute;top:26px;left:70px;right:70px;display:flex;justify-content:space-between;
+    align-items:center;font-size:11px;letter-spacing:.28em;color:rgba(244,240,232,.55);z-index:5}
+  .top .mark{display:flex;align-items:center;gap:12px}
+  .top .mark i{display:block;width:9px;height:9px;background:var(--red);transform:rotate(45deg)}
+  .footer{position:absolute;bottom:24px;left:70px;right:70px;display:flex;justify-content:space-between;
+    align-items:center;font-size:11px;letter-spacing:.16em;color:rgba(244,240,232,.42);z-index:5}
+  .footer .num{font-family:var(--serif);font-size:15px;color:var(--white);letter-spacing:.08em}
+  .footer .num b{color:var(--red);font-weight:400}
+  .rule{height:1px;background:rgba(244,240,232,.18)}
+  .red{color:var(--red)} .white{color:var(--white)}
+  .serif{font-family:var(--serif)}
+  .eyebrow{font-family:var(--serif);font-size:13px;letter-spacing:.34em;color:var(--red);text-transform:uppercase}
+  h1,h2,h3{font-family:var(--serif);font-weight:400}
+  .hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:rgba(244,240,232,.28);
+    font-size:11px;letter-spacing:.16em;z-index:20}
+  .dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:20}
+  .dots button{width:6px;height:6px;border:0;border-radius:50%;background:rgba(244,240,232,.25);cursor:pointer;padding:0}
+  .dots button.on{background:var(--red);transform:scale(1.6)}
+  /* ---------- slide 1 ---------- */
+  .cover .bigjack{position:absolute;left:58px;top:118px;font-family:var(--serif);font-size:210px;
+    line-height:.82;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:2px var(--red);opacity:.92}
+  .cover .rip{position:absolute;left:64px;top:288px;font-family:var(--serif);font-size:112px;
+    line-height:1;letter-spacing:.14em;color:var(--red)}
+  .cover .cn{position:absolute;left:70px;top:416px;font-size:52px;letter-spacing:.14em}
+  .cover .cn small{display:block;font-size:19px;letter-spacing:.28em;margin-top:14px;color:rgba(244,240,232,.72)}
+  .cover .line{position:absolute;left:70px;top:530px;width:470px;height:2px;background:var(--red)}
+  .cover .meta{position:absolute;left:70px;top:554px;font-size:13px;letter-spacing:.22em;color:rgba(244,240,232,.58);line-height:2}
+  .cover .bird{position:absolute;right:20px;top:64px;width:520px;height:520px;opacity:.96}
+  .cover .knife{position:absolute;right:250px;top:150px;width:66px;height:420px;opacity:.85;transform:rotate(14deg)}
+  .cover .year{position:absolute;right:64px;bottom:66px;font-family:var(--serif);font-size:96px;
+    color:rgba(244,240,232,.06);letter-spacing:-.04em}
+  /* ---------- slide 2 ---------- */
+  .toc h2{font-size:58px;letter-spacing:.12em;margin:8px 0 8px}
+  .toc .sub{font-size:14px;letter-spacing:.24em;color:rgba(244,240,232,.55);margin-bottom:46px}
+  .toc .items{display:grid;grid-template-columns:1fr 1fr;gap:22px 56px;position:relative;z-index:2}
+  .toc .item{display:flex;gap:20px;align-items:flex-start;padding:18px 0;border-top:1px solid rgba(244,240,232,.18)}
+  .toc .item .n{font-family:var(--serif);font-size:44px;line-height:1;color:var(--red);min-width:62px}
+  .toc .item h3{font-size:24px;letter-spacing:.08em;margin-bottom:8px}
+  .toc .item p{font-size:13px;line-height:1.8;color:rgba(244,240,232,.6);letter-spacing:.04em}
+  .toc .ghost{position:absolute;right:20px;bottom:20px;width:420px;height:420px;opacity:.12}
+  /* ---------- slide 3 ---------- */
+  .case h2{font-size:46px;letter-spacing:.08em;margin:6px 0 10px}
+  .case .lead{font-size:14px;letter-spacing:.12em;color:rgba(244,240,232,.62);margin-bottom:34px}
+  .timeline{position:relative;height:300px;border-top:1px solid var(--red);margin:0 8px}
+  .timeline:before{content:"";position:absolute;left:0;top:0;width:100%;height:1px;background:var(--red)}
+  .ev{position:absolute;top:0;width:19%;padding-top:26px}
+  .ev:before{content:"";position:absolute;left:0;top:-7px;width:13px;height:13px;background:var(--red);transform:rotate(45deg)}
+  .ev .d{font-family:var(--serif);font-size:19px;color:var(--red);letter-spacing:.06em}
+  .ev .name{font-size:19px;margin:10px 0 8px;letter-spacing:.04em}
+  .ev .en{font-family:var(--serif);font-size:12px;color:rgba(244,240,232,.42);letter-spacing:.08em;line-height:1.6}
+  .ev:nth-child(1){left:1%} .ev:nth-child(2){left:21%} .ev:nth-child(3){left:41%}
+  .ev:nth-child(4){left:61%} .ev:nth-child(5){left:81%}
+  .case .ghostyear{position:absolute;left:430px;top:305px;font-family:var(--serif);font-size:168px;color:rgba(244,240,232,.045);letter-spacing:-.04em}
+  .facts{display:flex;gap:34px;margin-top:22px;font-size:12px;color:rgba(244,240,232,.55);letter-spacing:.06em}
+  .facts b{color:var(--red);font-weight:400;margin-right:8px;font-family:var(--serif)}
+  .quote{border-left:3px solid var(--red);padding-left:22px;font-size:16px;line-height:1.9;
+    color:rgba(244,240,232,.84);max-width:930px;margin-top:16px}
+  .quote span{display:block;font-size:12px;color:var(--red);letter-spacing:.16em;margin-top:10px}
+  .skyline{position:absolute;left:0;bottom:54px;width:100%;height:120px;opacity:.16}
+  /* ---------- slide 4 ---------- */
+  .lettercard{position:absolute;left:70px;top:150px;width:470px;height:414px;background:var(--white);
+    color:#111;padding:32px 34px;transform:rotate(-1.2deg);box-shadow:22px 22px 0 rgba(207,20,43,.22)}
+  .lettercard .lt{font-family:var(--serif);font-size:30px;color:var(--red);letter-spacing:.08em;margin-bottom:6px}
+  .lettercard .ld{font-size:12px;letter-spacing:.14em;color:#666;margin-bottom:20px}
+  .lettercard .lq{font-family:var(--serif);font-size:17px;line-height:1.85;color:#111}
+  .lettercard .lq em{color:var(--red);font-style:normal}
+  .lettercard .lsign{font-family:var(--serif);font-size:23px;color:var(--red);margin-top:20px;letter-spacing:.06em}
+  .lettercard .lstamp{position:absolute;right:18px;bottom:18px;border:2px solid var(--red);color:var(--red);
+    font-size:11px;letter-spacing:.18em;padding:7px 10px;transform:rotate(-8deg)}
+  .steps{position:absolute;left:596px;top:154px;width:610px}
+  .step{display:flex;gap:18px;padding:16px 0;border-bottom:1px solid rgba(244,240,232,.14)}
+  .step .sd{font-family:var(--serif);font-size:25px;color:var(--red);min-width:96px}
+  .step .st{font-size:16px;line-height:1.5}
+  .step p{font-size:12px;color:rgba(244,240,232,.5);margin-top:5px;line-height:1.7}
+  .stamp{position:absolute;right:70px;bottom:78px;border:2px solid var(--red);padding:10px 16px;
+    color:var(--red);font-family:var(--serif);font-size:15px;letter-spacing:.16em;transform:rotate(-5deg)}
+  /* ---------- slide 5 ---------- */
+  .press .headline{position:absolute;left:70px;top:132px;font-family:var(--serif);font-size:152px;
+    line-height:.86;letter-spacing:-.04em;color:var(--red)}
+  .press .headline small{display:block;font-family:var(--sans);font-size:16px;letter-spacing:.42em;
+    color:var(--white);margin-top:16px}
+  .press .cols{position:absolute;left:70px;right:70px;bottom:96px;display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+  .press .col{border-top:2px solid var(--red);padding-top:16px}
+  .press .col h3{font-size:21px;margin-bottom:10px;letter-spacing:.06em}
+  .press .col p{font-size:13px;line-height:1.85;color:rgba(244,240,232,.62)}
+  .press .fq{position:absolute;right:70px;top:150px;width:430px;font-family:var(--serif);font-size:17px;
+    line-height:1.9;color:var(--white);border-left:3px solid var(--white);padding-left:18px}
+  .press .fq span{display:block;font-family:var(--sans);font-size:11px;letter-spacing:.18em;color:var(--red);margin-top:12px}
+  .press .paper{position:absolute;right:60px;top:300px;width:170px;height:180px;opacity:.06}
+  /* ---------- slide 6 ---------- */
+  .suspects .cards{position:absolute;left:70px;top:158px;right:70px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .dossier{height:330px;border:1px solid rgba(244,240,232,.3);padding:24px;position:relative;overflow:hidden}
+  .dossier:before{content:"";position:absolute;left:0;top:0;width:100%;height:5px;background:var(--red)}
+  .dossier .dn{font-family:var(--serif);font-size:15px;color:var(--red);letter-spacing:.2em}
+  .dossier h3{font-size:25px;margin:22px 0 6px;line-height:1.3}
+  .dossier .role{font-size:12px;color:rgba(244,240,232,.5);letter-spacing:.08em;margin-bottom:24px}
+  .dossier p{font-size:13px;line-height:1.8;color:rgba(244,240,232,.68)}
+  .dossier .dnum{position:absolute;right:14px;bottom:2px;font-family:var(--serif);font-size:76px;color:rgba(244,240,232,.05)}
+  .dossier .no{position:absolute;left:20px;bottom:18px;border:2px solid var(--red);color:var(--red);
+    padding:5px 9px;font-family:var(--serif);font-size:12px;letter-spacing:.14em;transform:rotate(-6deg)}
+  .suspects .stat{position:absolute;left:70px;bottom:78px;font-family:var(--serif);font-size:56px;color:var(--red)}
+  .suspects .stat small{font-family:var(--sans);font-size:14px;color:rgba(244,240,232,.6);letter-spacing:.14em;margin-left:14px}
+  .suspects .concl{position:absolute;right:70px;bottom:92px;font-size:18px;letter-spacing:.1em}
+  /* ---------- slide 7 ---------- */
+  .victims .row{position:absolute;left:70px;top:176px;right:70px;display:flex;justify-content:space-between}
+  .vic{width:19%;text-align:center}
+  .vic svg{width:86px;height:190px;opacity:.85}
+  .vic .vn{font-size:16px;margin-top:12px;letter-spacing:.04em}
+  .vic .vd{font-family:var(--serif);font-size:12px;color:var(--red);letter-spacing:.08em;margin-top:5px}
+  .strike{position:absolute;left:70px;top:440px;font-family:var(--serif);font-size:38px;
+    color:rgba(244,240,232,.28);letter-spacing:.18em}
+  .strike:after{content:"";position:absolute;left:-8px;top:50%;width:calc(100% + 16px);height:4px;
+    background:var(--red);transform:rotate(-3deg)}
+  .victims .vq{position:absolute;left:70px;top:500px;width:900px;font-size:16px;line-height:1.9}
+  .victims .vq span{color:var(--red)}
+  .victims .vn2{position:absolute;right:70px;top:500px;width:330px;border-left:2px solid var(--red);
+    padding-left:18px;font-size:13px;line-height:1.9;color:rgba(244,240,232,.66)}
+  /* ---------- slide 8 ---------- */
+  .logic .eq{position:absolute;left:70px;top:150px;width:670px;font-family:var(--serif);font-size:30px;line-height:1.85;letter-spacing:.04em}
+  .logic .eq i{color:var(--red);font-style:normal;margin:0 8px}
+  .logic .eq b{color:var(--red);font-weight:400}
+  .logic .eqsmall{position:absolute;left:70px;top:272px;width:670px;font-size:12px;letter-spacing:.16em;color:rgba(244,240,232,.48)}
+  .logic .result{position:absolute;left:70px;top:384px;font-size:24px;letter-spacing:.16em}
+  .logic .result strong{font-family:var(--serif);font-size:70px;color:var(--red);font-weight:400;letter-spacing:.02em}
+  .logic .checks{position:absolute;right:70px;top:150px;width:430px}
+  .logic .check{border:1px solid rgba(244,240,232,.28);padding:17px 20px;margin-bottom:14px;display:flex;gap:18px;align-items:center}
+  .logic .check .cn{font-family:var(--serif);font-size:26px;color:var(--red)}
+  .logic .check div h4{font-size:17px;font-weight:400;margin-bottom:4px}
+  .logic .check div p{font-size:12px;color:rgba(244,240,232,.5)}
+  .logic .final{position:absolute;right:70px;bottom:80px;font-family:var(--serif);font-size:28px;color:var(--red);letter-spacing:.14em}
+  /* ---------- slide 9 ---------- */
+  .end .q{position:absolute;right:80px;top:60px;font-family:var(--serif);font-size:420px;line-height:1;
+    color:var(--red);opacity:.16}
+  .end h2{position:absolute;left:70px;top:140px;font-size:64px;letter-spacing:.12em}
+  .end h2 small{display:block;font-family:var(--serif);font-size:22px;letter-spacing:.3em;color:var(--red);margin-top:18px}
+  .end .endline{position:absolute;left:70px;top:330px;width:520px;height:2px;background:var(--red)}
+  .end .src{position:absolute;left:70px;top:360px;font-size:12px;line-height:2;color:rgba(244,240,232,.46);letter-spacing:.04em}
+  .end .src b{color:rgba(244,240,232,.72);font-weight:400}
+  .end .bird2{position:absolute;right:70px;bottom:50px;width:330px;height:330px;opacity:.55}
+  .end .caseend{position:absolute;right:70px;top:160px;font-family:var(--serif);font-size:19px;
+    letter-spacing:.28em;color:rgba(244,240,232,.55);text-align:right;line-height:2}
+  /* ---------- 文字分层显现 ---------- */
+  .js-ready .rv{opacity:0;transform:translateY(18px);filter:blur(5px);
+    transition:opacity .5s ease,transform .66s cubic-bezier(.2,.8,.25,1),filter .5s ease}
+  .js-ready .rv.in{opacity:1;transform:none;filter:none}
+  .js-ready .rv.rz{transform:translateY(14px) scale(.9)}
+  .js-ready .rv.rz.in{transform:none}
+  .js-ready .rv.rl{transform:translateX(-36px)}
+  .js-ready .rv.rl.in{transform:none}
+  .js-ready .rv.rr{transform:translateX(36px)}
+  .js-ready .rv.rr.in{transform:none}
+  .js-ready .rv.rf{transform:perspective(900px) rotateY(-78deg);transform-origin:left center}
+  .js-ready .rv.rf.in{transform:none}
+  .js-ready .rv.rd{transform:translateY(-22px) scale(1.06)}
+  .js-ready .rv.rd.in{transform:none}
+  .js-ready .rv.rblur{transform:scale(1.06);filter:blur(14px)}
+  .js-ready .rv.rblur.in{transform:none;filter:none}
+  .js-ready .rv.rline{opacity:1;transform:scaleX(0);transform-origin:left center}
+  .js-ready .rv.rline.in{transform:scaleX(1)}
+  .js-ready .rv.rseal{transform:none;filter:blur(7px)}
+  .js-ready .rv.rseal.in{transform:none;filter:none}
+  .js-ready .rv.rcard{transform:translateX(70px) rotate(-7deg)}
+  .js-ready .rv.rcard.in{transform:rotate(-1.2deg)}
+  /* print */
+  @page{size:13.333in 7.5in;margin:0}
+  @media print{
+    html,body{width:1280px!important;height:auto!important;overflow:visible!important;background:#0b0b0b!important;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .stage{position:static!important;display:block!important;background:none!important}
+    .deck{position:static!important;width:1280px!important;height:auto!important;transform:none!important;overflow:visible!important}
+    .slide,.slide.active,.slide.exit-left,.slide.exit-right{position:relative!important;inset:auto!important;
+      display:block!important;opacity:1!important;visibility:visible!important;transform:none!important;
+      filter:none!important;width:1280px!important;height:720px!important;page-break-after:always;break-after:page;
+      z-index:1!important}
+    .hint,.dots,.fx,.grain{display:none!important}
+    .js-ready .rv,.js-ready .rv.in{opacity:1!important;transform:none!important;filter:none!important}
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="magpie" viewBox="0 0 300 300">
+      <path fill="currentColor" d="M126 166 L14 248 L100 232 L28 292 L136 216 Z"/>
+      <path fill="currentColor" d="M108 110 C148 92 200 104 220 140 C237 172 214 206 170 216 C128 225 98 202 93 166 C90 140 97 120 108 110 Z"/>
+      <circle cx="221" cy="118" r="34" fill="currentColor"/>
+      <path fill="currentColor" d="M249 114 L296 127 L249 141 Z"/>
+      <path fill="currentColor" d="M128 133 L192 150 L164 197 L118 175 Z"/>
+      <circle cx="229" cy="109" r="4.5" fill="#0b0b0b"/>
+    </symbol>
+    <symbol id="skyline" viewBox="0 0 1200 200">
+      <path fill="currentColor" d="M0 200V150h40v-24h18v24h30v-46h12v46h34v-30h26v30h40V96h8v54h36v-38h20v38h44V72h6v78h38v-50h24v50h40v-28h30v28h46v-62h8v62h40v-44h22v44h44v-30h26v30h40v-74h10v74h38v-42h24v42h44v-26h28v26h40v-56h8v56h40v-34h26v34h40v-68h8v68h38v-40h24v40h44v-24h28v24h40V92h8v58h34v-36h24v36h42V78h8v72h40v-44h24v44h46v-28h28v28h44v-64h8v64h40v-38h24v38h44v-20h30v20h44V200z"/>
+    </symbol>
+    <symbol id="knife" viewBox="0 0 100 400">
+      <path fill="currentColor" d="M50 0c18 32 26 74 24 122-1 30-6 58-13 84H39C32 180 27 152 26 122 24 74 32 32 50 0z"/>
+      <path fill="currentColor" d="M30 202h40v16H30zM36 218h28v150c0 10-6 16-14 16s-14-6-14-16V218z"/>
+    </symbol>
+    <symbol id="lady" viewBox="0 0 120 260">
+      <path fill="currentColor" d="M34 30 Q60 4 86 30 L90 38 L30 38 Z"/>
+      <path fill="currentColor" d="M60 14c17 0 29 13 29 30 0 14-9 26-22 31l3 15c20 5 34 19 38 40l8 130H14l8-130c4-21 18-35 38-40l3-15C53 70 44 58 44 44c0-17 12-30 29-30z"/>
+      <circle cx="90" cy="47" r="9" fill="currentColor"/>
+    </symbol>
+    <symbol id="newspaper" viewBox="0 0 200 240">
+      <path fill="currentColor" d="M0 0h200v240H0z"/>
+      <g fill="#0b0b0b">
+        <rect x="10" y="10" width="180" height="26"/>
+        <rect x="10" y="46" width="86" height="70"/>
+        <rect x="106" y="46" width="84" height="30"/>
+        <rect x="106" y="84" width="84" height="32"/>
+        <rect x="10" y="126" width="180" height="8"/>
+        <rect x="10" y="144" width="86" height="8"/>
+        <rect x="106" y="144" width="84" height="8"/>
+        <rect x="10" y="162" width="86" height="8"/>
+        <rect x="106" y="162" width="84" height="8"/>
+        <rect x="10" y="180" width="180" height="8"/>
+        <rect x="10" y="198" width="120" height="8"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="stage">
+<div class="deck" id="deck">
+  <div class="fx" id="fx" aria-hidden="true">
+    <i class="fx-slash"></i><i class="fx-blind"></i><i class="fx-ink"></i><i class="fx-glitch"></i>
+    <i class="fx-page"></i><i class="fx-fog"></i><i class="fx-shutter"></i><i class="fx-drop"></i>
+  </div>
+
+  <!-- 01 封面 -->
+  <section class="slide cover active">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="top"><span class="mark"><i></i>OPEN CASE · 1888</span><span>WHITECHAPEL / LONDON</span></div>
+    <div class="bigjack serif">JACK</div>
+    <div class="rip serif">THE RIPPER</div>
+    <div class="cn">雾都迷案<small>谁制造了「开膛手杰克」</small></div>
+    <div class="line"></div>
+    <div class="meta">新闻传播视角下的百年悬案<br>红 · 黑 · 白 ／ 悬疑推理叙事 ／ 第四次作业</div>
+    <svg class="bird" style="color:var(--red)"><use href="#magpie"/></svg>
+    <svg class="knife" style="color:var(--white)"><use href="#knife"/></svg>
+    <div class="year">1888</div>
+    <div class="footer"><span>CASE FILE · UNSOLVED</span><span class="num"><b>01</b> / 09</span></div>
+  </section>
+
+  <!-- 02 目录 -->
+  <section class="slide toc">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="pad">
+      <div class="eyebrow">CONTENTS / 案件卷宗</div>
+      <h2>五页卷宗，<span class="red">一桩悬案</span></h2>
+      <div class="sub">从犯罪现场到新闻现场——凶手未获判决，名字却已流传百年</div>
+      <div class="items">
+        <div class="item"><div class="n">01</div><div><h3>案发：五个人，五个夜晚</h3><p>1888 年白教堂，被简化为「经典五案」的五条生命。</p></div></div>
+        <div class="item"><div class="n">02</div><div><h3>命名：一封红墨水信</h3><p>「Dear Boss」如何把一个化名变成全球品牌。</p></div></div>
+        <div class="item"><div class="n">03</div><div><h3>造势：小报制造「杰克」</h3><p>道德剧、医生传说、移民指控与数百封模仿信。</p></div></div>
+        <div class="item"><div class="n">04</div><div><h3>失真：标签盖过受害者</h3><p>她们是谁？关于五名女性的传播学追问。</p></div></div>
+        <div class="item"><div class="n">05</div><div><h3>反思：悬案为何不散</h3><p>高热度不等于硬事实：一份媒介素养清单。</p></div></div>
+        <div class="item"><div class="n">＋</div><div><h3>结语：雾仍未散</h3><p>当叙事比真相更早结案。</p></div></div>
+      </div>
+    </div>
+    <svg class="ghost" style="color:var(--white)"><use href="#magpie"/></svg>
+    <div class="footer"><span>CONTENTS</span><span class="num"><b>02</b> / 09</span></div>
+  </section>
+
+  <!-- 03 案例一 -->
+  <section class="slide case">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="pad">
+      <div class="eyebrow">CASE 01 / 1888.08—11</div>
+      <h2>案发：<span class="red">五个人</span>，五个夜晚</h2>
+      <div class="lead">所谓「经典五案」（canonical five）是后世归纳，并非当时的定论</div>
+      <div class="timeline">
+        <div class="ev"><div class="d">08.31</div><div class="name">玛丽·安·尼科尔斯</div><div class="en">Mary Ann Nichols<br>43岁 · 巴克街</div></div>
+        <div class="ev"><div class="d">09.08</div><div class="name">安妮·查普曼</div><div class="en">Annie Chapman<br>47岁 · 汉伯里街</div></div>
+        <div class="ev"><div class="d">09.30</div><div class="name">伊丽莎白·斯特赖德</div><div class="en">Elizabeth Stride<br>44岁 · 伯纳街</div></div>
+        <div class="ev"><div class="d">09.30</div><div class="name">凯瑟琳·埃多斯</div><div class="en">Catherine Eddowes<br>46岁 · 米特广场</div></div>
+        <div class="ev"><div class="d">11.09</div><div class="name">玛丽·简·凯利</div><div class="en">Mary Jane Kelly<br>25岁 · 米勒公寓</div></div>
+      </div>
+      <div class="ghostyear">1888</div>
+      <div class="facts"><span><b>时间</b>1888.08.31—11.09</span><span><b>地点</b>白教堂一带，半径约一英里</span><span><b>共性</b>深夜遇害、割喉、剖腹</span><span><b>定名</b>后世称「经典五案」</span></div>
+      <div class="quote">「她们的生平被缠进了一张由假设、谣言与无根据揣测织成的网里。」<span>HALLIE RUBENHOLD · 《THE FIVE》</span></div>
+    </div>
+    <svg class="skyline" style="color:var(--white)"><use href="#skyline"/></svg>
+    <div class="footer"><span>来源：BBC History / Britannica</span><span class="num"><b>03</b> / 09</span></div>
+  </section>
+
+  <!-- 04 案例二 -->
+  <section class="slide letter">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="pad">
+      <div class="eyebrow">CASE 02 / THE NAME</div>
+      <h2 style="font-size:46px;margin:6px 0 0">命名：<span class="red">一封红墨水信</span></h2>
+    </div>
+    <div class="lettercard">
+      <div class="lt">Dear Boss,</div>
+      <div class="ld">1888.09.25 · 寄给中央新闻社（Central News Agency）</div>
+      <div class="lq">「我听说警方已经抓到我了，<br>他们只是还拿我没辙。<br>下一次，我要把女士的<em>耳朵</em>剪下来……<br>别介意我用这个<em>行号</em>署名。」</div>
+      <div class="lsign">Yours truly,<br>Jack the Ripper</div>
+      <div class="lstamp">HOAX?</div>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="sd">09.25</div><div><div class="st">信件署期，用红墨水写成</div><p>两页纸，拼写与标点错误百出。</p></div></div>
+      <div class="step"><div class="sd">09.27</div><div><div class="st">中央新闻社收件</div><p>最初被当作大量恶作剧信件之一。</p></div></div>
+      <div class="step"><div class="sd">09.30</div><div><div class="st">埃多斯遇害，右耳部分被割</div><p>信中「剪耳朵」的细节突然显得「应验」。</p></div></div>
+      <div class="step"><div class="sd">10.01</div><div><div class="st">警方印发信件传单</div><p>全国报纸全文转载，名字随之传遍世界。</p></div></div>
+    </div>
+    <div class="stamp">警方后来认定：极可能是记者伪造</div>
+    <div class="footer"><span>来源：The National Archives / Britannica</span><span class="num"><b>04</b> / 09</span></div>
+  </section>
+
+  <!-- 05 案例三 -->
+  <section class="slide press">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="pad"><div class="eyebrow">CASE 03 / THE PRESS</div></div>
+    <div class="headline">JACK<small>THE NAME THAT SOLD THE PAPERS</small></div>
+    <div class="fq">「谋杀在那个秋天就被写成了小说，成了一出至今仍在回响的道德剧。」<span>CHRISTOPHER FRAYLING · BBC CULTURE, 2026</span></div>
+    <div class="paper"><svg style="color:var(--white);width:100%;height:100%"><use href="#newspaper"/></svg></div>
+    <div class="cols">
+      <div class="col"><h3>① 小报的连续剧</h3><p>一桩凶案被拆成每日连载：醒目标题、悬赏、读者来信、现场想象，读者追更「下一集」。</p></div>
+      <div class="col"><h3>② 现成的嫌疑人</h3><p>「刀法精准 ⇒ 医生」；「东区贫困与移民 ⇒ 外来者」。报纸先给出剧本，警方与公众照着找人。</p></div>
+      <div class="col"><h3>③ 模仿的信件潮</h3><p>「Jack the Ripper」成为可复用的署名（trade name）；警察与报社收到数百封模仿信，真假难辨。</p></div>
+    </div>
+    <div class="footer"><span>来源：BBC Culture 2026 / BBC History</span><span class="num"><b>05</b> / 09</span></div>
+  </section>
+
+  <!-- 06 案例四 -->
+  <section class="slide suspects">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="pad">
+      <div class="eyebrow">CASE 04 / SUSPECT FILES</div>
+      <h2 style="font-size:46px;margin:6px 0 10px">名册：<span class="red">媒体与警方共同开出</span></h2>
+      <div class="lead" style="font-size:14px;color:rgba(244,240,232,.6);margin:0">1894 年，警方档案中一份备忘录写下三名「认真考虑过」的嫌疑人</div>
+      <div class="cards">
+        <div class="dossier"><div class="dn">FILE 01</div><h3>蒙塔古·德鲁伊特</h3><div class="role">Montague Druitt · 律师</div><p>被误认为医生；1888 年 12 月尸体在泰晤士河中被发现，其时案件已近尾声。</p><div class="dnum">01</div><div class="no">NO EVIDENCE</div></div>
+        <div class="dossier"><div class="dn">FILE 02</div><h3>阿伦·科斯明斯基</h3><div class="role">Aaron Kosminski · 波兰裔理发师</div><p>生活在白教堂，1899 年死于精神病院；后世「DNA 破案」说法争议不断。</p><div class="dnum">02</div><div class="no">NO EVIDENCE</div></div>
+        <div class="dossier"><div class="dn">FILE 03</div><h3>迈克尔·奥斯特罗格</h3><div class="role">Michael Ostrog · 俄国医生／惯犯</div><p>身份与行踪均充满不确定性，更多来自当时的传闻网络。</p><div class="dnum">03</div><div class="no">NO EVIDENCE</div></div>
+      </div>
+    </div>
+    <div class="stat">200+<small>百余年间被点名的嫌疑人</small></div>
+    <div class="concl">「名单是传播史，<span class="red">不是破案史</span>。」</div>
+    <div class="footer"><span>来源：BBC Culture 2026 · Frayling</span><span class="num"><b>06</b> / 09</span></div>
+  </section>
+
+  <!-- 07 案例五 -->
+  <section class="slide victims">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="pad">
+      <div class="eyebrow">CASE 05 / THE VOICELESS</div>
+      <h2 style="font-size:46px;margin:6px 0 0">失语：<span class="red">标签盖过人</span></h2>
+    </div>
+    <div class="row">
+      <div class="vic"><svg style="color:var(--white)"><use href="#lady"/></svg><div class="vn">波莉</div><div class="vd">MARY ANN NICHOLS</div></div>
+      <div class="vic"><svg style="color:var(--white)"><use href="#lady"/></svg><div class="vn">安妮</div><div class="vd">ANNIE CHAPMAN</div></div>
+      <div class="vic"><svg style="color:var(--white)"><use href="#lady"/></svg><div class="vn">丽兹</div><div class="vd">ELIZABETH STRIDE</div></div>
+      <div class="vic"><svg style="color:var(--white)"><use href="#lady"/></svg><div class="vn">凯特</div><div class="vd">CATHERINE EDDOWES</div></div>
+      <div class="vic"><svg style="color:var(--white)"><use href="#lady"/></svg><div class="vn">玛丽</div><div class="vd">MARY JANE KELLY</div></div>
+    </div>
+    <div class="strike">"PROSTITUTES"</div>
+    <div class="vq">「只有两名受害者的资料显示曾有性工作证据；其余人只是因为<strong style="color:var(--red);font-weight:400">在街头露宿</strong>而被媒体与警方贴上标签。」</div>
+    <div class="vn2">传播学追问：<br>谁在定义「受害者」？<br>谁的故事被凶手的魅力掩盖？<br>标签一旦贴出，便比证据活得更久。</div>
+    <div class="footer"><span>来源：BBC Radio 4 / Hallie Rubenhold《The Five》</span><span class="num"><b>07</b> / 09</span></div>
+  </section>
+
+  <!-- 08 结论 -->
+  <section class="slide logic">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="pad">
+      <div class="eyebrow">VERDICT / 传播公式</div>
+      <h2 style="font-size:46px;margin:6px 0 0">悬案为何<span class="red">不散</span></h2>
+    </div>
+    <div class="eq">未完成叙事 <i>＋</i> 高识别符号<br>信息真空 <i>＋</i> 媒体反复展演 <i>＝</i> <b>百年神话</b></div>
+    <div class="eqsmall">符号：红墨水 · 刀 · 雾都 · 匿名信</div>
+    <div class="result"><strong>高热度 ≠ 硬事实</strong></div>
+    <div class="checks">
+      <div class="check"><div class="cn">01</div><div><h4>看信源</h4><p>谁最先发布？是警方档案，还是小报标题？</p></div></div>
+      <div class="check"><div class="cn">02</div><div><h4>查证据链</h4><p>「应验的细节」是否早已公开？能否交叉验证？</p></div></div>
+      <div class="check"><div class="cn">03</div><div><h4>听谁失语</h4><p>被标签化的人有没有机会讲完自己的故事？</p></div></div>
+    </div>
+    <div class="final">CASE OPEN · 叙事仍在继续</div>
+    <div class="footer"><span>媒介素养 · 三步核验</span><span class="num"><b>08</b> / 09</span></div>
+  </section>
+
+  <!-- 09 结尾 -->
+  <section class="slide end">
+    <div class="fog"></div><div class="grain"></div>
+    <div class="q">?</div>
+    <div class="pad"><div class="eyebrow">THE END / 未结之案</div></div>
+    <h2>真相，仍在雾中<small>THE FOG HAS NOT LIFTED</small></h2>
+    <div class="endline"></div>
+    <div class="src"><b>资料来源</b><br>
+      BBC Culture《The creation of the myth of Jack the Ripper》2026<br>
+      BBC History《Jack the Ripper (?)》；BBC News 2016 / 2024<br>
+      Britannica《Who were Jack the Ripper's victims?》<br>
+      The National Archives（UK）："Dear Boss" letter 原件转录<br>
+      BBC Radio 4 / Hallie Rubenhold《The Five》
+    </div>
+    <div class="caseend">WHOEVER IT WAS,<br>IT WAS NOT THE CHARACTER<br>INVENTED BY THE PRESS.</div>
+    <svg class="bird2" style="color:var(--red)"><use href="#magpie"/></svg>
+    <div class="footer"><span>红黑白 · 悬疑推理风格 · 新闻传播视角</span><span class="num"><b>09</b> / 09</span></div>
+  </section>
+</div>
+</div>
+
+<div class="dots" id="dots"></div>
+<div class="hint">← → / 空格 翻页 · 点击右侧圆点跳转 · 打印可导出 PDF</div>
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const fxLayers=[...document.querySelectorAll('.fx i')];
+  const FX=['slash','blind','ink','glitch','page','fog','shutter','drop'];
+  const dots=document.getElementById('dots');
+  let cur=0,busy=false;
+  const deck=document.getElementById('deck');
+  deck.classList.add('js-ready');
+
+  /* 每页文字显现序列：d=起始毫秒，g=同组元素间隔，p=进入姿态 */
+  const RV_SEQ=[
+    [ // 01 封面
+      {s:'.top',d:60},{s:'.bigjack',d:160,p:'rz'},{s:'.bird',d:240,p:'rr'},
+      {s:'.rip',d:300,p:'rr'},{s:'.knife',d:400,p:'rd'},{s:'.cn',d:470},
+      {s:'.line',d:610,p:'rline'},{s:'.meta',d:660},{s:'.year',d:760,p:'rblur'},
+      {s:'.footer',d:880}
+    ],
+    [ // 02 目录
+      {s:'.eyebrow',d:60},{s:'h2',d:150,p:'rz'},{s:'.sub',d:270},
+      {s:'.items .item',d:360,g:120,p:'rr'},{s:'.ghost',d:480,p:'rblur'},
+      {s:'.footer',d:1120}
+    ],
+    [ // 03 五案时间线
+      {s:'.eyebrow',d:60},{s:'h2',d:150,p:'rz'},{s:'.lead',d:250},
+      {s:'.timeline .ev',d:340,g:110},{s:'.ghostyear',d:420,p:'rblur'},
+      {s:'.skyline',d:700,p:'rd'},{s:'.facts span',d:880,g:80},
+      {s:'.quote',d:1180},{s:'.footer',d:1320}
+    ],
+    [ // 04 信件
+      {s:'.eyebrow',d:60},{s:'.pad h2',d:150,p:'rz'},
+      {s:'.lettercard',d:260,p:'rcard'},
+      {s:'.lettercard .lt',d:400},{s:'.lettercard .ld',d:470},
+      {s:'.lettercard .lq',d:540},{s:'.lettercard .lsign',d:690},
+      {s:'.lettercard .lstamp',d:780,p:'rseal'},
+      {s:'.steps .step',d:430,g:130,p:'rl'},
+      {s:'.stamp',d:1020,p:'rseal'},{s:'.footer',d:1140}
+    ],
+    [ // 05 小报
+      {s:'.eyebrow',d:60},{s:'.headline',d:150,p:'rz'},{s:'.headline small',d:360,p:'rr'},
+      {s:'.fq',d:330,p:'rl'},{s:'.paper',d:560,p:'rblur'},
+      {s:'.cols .col',d:520,g:150},{s:'.footer',d:1100}
+    ],
+    [ // 06 嫌疑人
+      {s:'.eyebrow',d:60},{s:'.pad h2',d:150,p:'rz'},{s:'.lead',d:250},
+      {s:'.cards .dossier',d:340,g:160,p:'rf'},
+      {s:'.dossier .no',d:700,g:160,p:'rseal'},
+      {s:'.stat',d:900,p:'rz'},{s:'.concl',d:1040},{s:'.footer',d:1160}
+    ],
+    [ // 07 受害者
+      {s:'.eyebrow',d:60},{s:'.pad h2',d:150,p:'rz'},
+      {s:'.row .vic',d:300,g:130},{s:'.strike',d:900,p:'rline'},
+      {s:'.vq',d:1000},{s:'.vn2',d:1120,p:'rl'},{s:'.footer',d:1260}
+    ],
+    [ // 08 结论
+      {s:'.eyebrow',d:60},{s:'.pad h2',d:150,p:'rz'},{s:'.eq',d:280},
+      {s:'.eqsmall',d:420},{s:'.result',d:550,p:'rz'},
+      {s:'.checks .check',d:680,g:150,p:'rl'},{s:'.final',d:1160},{s:'.footer',d:1280}
+    ],
+    [ // 09 结尾
+      {s:'.q',d:100,p:'rblur'},{s:'.eyebrow',d:100},{s:'h2',d:220,p:'rz'},
+      {s:'.endline',d:400,p:'rline'},{s:'.src',d:480},
+      {s:'.bird2',d:600,p:'rr'},{s:'.caseend',d:760,p:'rr'},{s:'.footer',d:1000}
+    ]
+  ];
+  function prepReveal(){
+    slides.forEach((slide,si)=>{
+      (RV_SEQ[si]||[]).forEach(g=>{
+        slide.querySelectorAll(g.s).forEach((el,i)=>{
+          el.classList.add('rv');
+          if(g.p)el.classList.add(g.p);
+          el.dataset.rvd=(g.d+(g.g||0)*i);
+        });
+      });
+    });
+  }
+  function playReveal(slide){
+    slide.querySelectorAll('.rv').forEach(el=>{clearTimeout(el._rvt);el.classList.remove('in')});
+    void slide.offsetWidth;
+    slide.querySelectorAll('.rv').forEach(el=>{
+      el._rvt=setTimeout(()=>el.classList.add('in'),+el.dataset.rvd||0);
+    });
+  }
+  slides.forEach((_,k)=>{const b=document.createElement('button');b.title='第'+(k+1)+'页';b.onclick=()=>go(k);dots.appendChild(b)});
+  function fit(){const d=document.getElementById('deck');const s=Math.min(innerWidth/1280,innerHeight/720);d.style.transform='scale('+s+')'}
+  function paint(){[...dots.children].forEach((b,k)=>b.classList.toggle('on',k===cur))}
+  function fxIndex(n,dir){const base=(n+7)%8;return dir>0?base:(8-base)%8}
+  function go(n){
+    if(busy||n===cur||n<0||n>=slides.length)return;
+    busy=true;const dir=n>cur?1:-1,old=cur;
+    slides[old].querySelectorAll('.rv').forEach(el=>{clearTimeout(el._rvt);el.classList.remove('in')});
+    const fi=fxIndex(n,dir),eff=FX[fi],layer=fxLayers[fi];
+    layer.classList.remove('run');void layer.offsetWidth;layer.classList.add('run');
+    slides[old].classList.remove('active');
+    slides[old].classList.add('fx-exit-'+eff);
+    slides[n].classList.remove('active');
+    slides[n].classList.add('fx-enter-'+eff);
+    void slides[n].offsetWidth;
+    setTimeout(()=>playReveal(slides[n]),420);
+    setTimeout(()=>{
+      layer.classList.remove('run');
+      slides[old].classList.remove('fx-exit-'+eff);
+      slides[n].style.transition='none';
+      slides[n].classList.remove('fx-enter-'+eff);
+      slides[n].classList.add('active');
+      void slides[n].offsetWidth;
+      slides[n].style.transition='';
+      cur=n;paint();busy=false;
+    },850);
+  }
+  prepReveal();
+  const qp=new URLSearchParams(location.search).get('p');
+  if(qp){const n=Math.max(0,Math.min(slides.length-1,parseInt(qp,10)-1));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===n));cur=n;}
+  addEventListener('resize',fit);fit();paint();
+  setTimeout(()=>playReveal(slides[cur]),240);
+  const auto=new URLSearchParams(location.search).get('auto');
+  if(auto)setTimeout(()=>go(parseInt(auto,10)-1),120);
+  addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();go(cur+1)}
+    if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(cur-1)}
+    if(e.key==='Home')go(0);if(e.key==='End')go(slides.length-1);
+  });
+  document.getElementById('deck').addEventListener('click',e=>{
+    if(e.clientX<innerWidth*.28)go(cur-1);else go(cur+1);
+  });
+</script>
+</body>
+</html>
